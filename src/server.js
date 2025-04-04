@@ -13,7 +13,7 @@ import {
 } from "./router/index.js";
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // middleware
 app.use(express.json());
