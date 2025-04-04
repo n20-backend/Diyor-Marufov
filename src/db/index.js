@@ -1,1 +1,1 @@
-export * from "./psqlConnect.js"
+export * from "./psqlConnect.js";
