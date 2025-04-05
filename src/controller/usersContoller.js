@@ -1,4 +1,4 @@
-import { dbConnection } from "../db/index.js";
+import { dbConnection } from "../config/index.js";
 
 export const usersController = {
     
