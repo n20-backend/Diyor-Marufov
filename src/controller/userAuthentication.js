@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { dbConnection } from "../config/index.js";
+import { dbConnection } from "../db/index.js";
 
 export const userAuthenticationController = {
   signUp: (req, res, next) => {},

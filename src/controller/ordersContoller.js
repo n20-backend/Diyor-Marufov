@@ -1,4 +1,4 @@
-import { dbConnection } from "../config/index.js";
+import { dbConnection } from "../db/index.js";
 
 export const ordersController = {
   findOne: async (req, res, next) => {
@@ -53,7 +53,8 @@ export const ordersController = {
     if (result.rowCount === 0)
       return res.status(404).send(`Data not returned while posting`);
 
-    res.status(201).json(result.rows);
+    const id = result.rows[0].orderid;
+    res.status(201).json({ orderId: id, message: "Order created" });
   },
 
   update: async (req, res, next) => {
@@ -77,7 +78,7 @@ export const ordersController = {
     if (result.rowCount === 0)
       return res.status(404).send(`Data not returned while updating`);
 
-    res.json(result.rows);
+    res.json({ orderId: id, message: "Order updated" });
   },
 
   delete: async (req, res, next) => {
@@ -94,6 +95,6 @@ export const ordersController = {
     if (result.rowCount === 0)
       return res.status(404).send(`Data not returned while deleting`);
 
-    res.json(result.rows);
+    res.json({ message: "Order deleted" });
   },
 };

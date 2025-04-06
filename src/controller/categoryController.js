@@ -1,4 +1,4 @@
-import { dbConnection } from "../config/index.js";
+import { dbConnection } from "../db/index.js";
 
 export const categoryController = {
   findOne: async (req, res, next) => {
@@ -53,7 +53,9 @@ export const categoryController = {
     if (result.rowCount === 0)
       return res.status(404).send(`Data not returned while posting`);
 
-    res.status(201).json(result.rows);
+    const id = result.rows[0].categoryid;
+
+    res.status(201).json({ categoryId: id, message: "Category created" });
   },
 
   update: async (req, res, next) => {
@@ -77,7 +79,7 @@ export const categoryController = {
     if (result.rowCount === 0)
       return res.status(404).send(`Data not returned while updating`);
 
-    res.json(result.rows);
+    res.json({ categoryId: id, message: "Category updated" });
   },
 
   delete: async (req, res, next) => {
@@ -94,6 +96,6 @@ export const categoryController = {
     if (result.rowCount === 0)
       return res.status(404).send(`Data not returned while deleting`);
 
-    res.json(result.rows);
+    res.json({ message: "Category deleted" });
   },
 };
