@@ -5,7 +5,7 @@ export const productController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`ID ${id} not found `);
+      if (!id) return res.status(404).send(`Product ID is required`);
 
       const query = `
             select * from product
@@ -15,7 +15,7 @@ export const productController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Insufficient length to get one`);
 
-      res.json(result.rows);
+      res.json(result.rows[0]);
     } catch (error) {
       next(error);
     }
@@ -29,7 +29,7 @@ export const productController = {
       const result = await dbConnection.query(query);
 
       if (result.rowCount === 0)
-        return res.status(404).send(`Insufficient length to get all`);
+        return res.status(404).send(`No products found`);
 
       res.json(result.rows);
     } catch (error) {
@@ -38,95 +38,130 @@ export const productController = {
   },
 
   create: async (req, res, next) => {
-    const {
-      name,
-      description,
-      categoryId,
-      price,
-      currency,
-      stockQuantity,
-      imageUrl,
-    } = req.body;
+    const client = await dbConnection.connect();
+    try {
+      const {
+        name,
+        description,
+        categoryId,
+        price,
+        currency,
+        stockQuantity,
+        imageUrl,
+      } = req.body;
 
-    if (
-      !name ||
-      !description ||
-      !categoryId ||
-      !price ||
-      !currency ||
-      !stockQuantity ||
-      !imageUrl
-    ) {
-      return res.status(400).send(`All data required while posting`);
+      if (
+        !name ||
+        !description ||
+        !categoryId ||
+        !price ||
+        !currency ||
+        !stockQuantity ||
+        !imageUrl
+      ) {
+        return res.status(400).send(`All data required while posting`);
+      }
+      await client.query("BEGIN");
+      const query = `
+          insert into product (name,description,categoryId,price,currency,stockQuantity,imageUrl) values
+          ($1,$2,$3,$4,$5,$6,$7) returning *`;
+      const result = await client.query(query, [
+        name,
+        description,
+        categoryId,
+        price,
+        currency,
+        stockQuantity,
+        imageUrl,
+      ]);
+
+      await client.query("COMMIT");
+      if (result.rowCount === 0)
+        return res.status(500).send(`Failed to insert product`);
+
+      const id = result.rows[0].productid;
+      res.status(201).json({ productId: id, message: "Product Created" });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      res.status(500).send("Something went wrong");
+    } finally {
+      client.release();
     }
-
-    const query = `
-        insert into product (name,description,categoryId,price,currency,stockQuantity,imageUrl) values
-        ($1,$2,$3,$4,$5,$6,$7) returning *`;
-
-    const result = await dbConnection.query(query, [
-      name,
-      description,
-      categoryId,
-      price,
-      currency,
-      stockQuantity,
-      imageUrl,
-    ]);
-
-    if (result.rowCount === 0)
-      return res.status(404).send(`Data not returned while posting`);
-
-    const id = result.rows[0].productid;
-    res.status(201).json({ productId: id, message: "Product Created" });
   },
 
   update: async (req, res, next) => {
-    const { id } = req.params;
-    const body = req.body;
+    const client = await dbConnection.connect();
+    try {
+      const { id } = req.params;
+      const body = req.body;
 
-    if (
-      !body.name &&
-      !body.description &&
-      !body.category &&
-      !body.price &&
-      !body.currency &&
-      !body.stockQuantity &&
-      !body.imageUrl
-    )
-      return res.status(400).send(`At least one data required while updating`);
+      if (
+        !id ||
+        (!body.name &&
+          !body.description &&
+          !body.categoryId &&
+          !body.price &&
+          !body.currency &&
+          !body.stockQuantity &&
+          !body.imageUrl)
+      )
+        return res
+          .status(400)
+          .send(
+            `Product ID is required or At least one data required while updating`
+          );
 
-    const keys = Object.keys(body);
-    const fields = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
-    const values = [...Object.values(body), id];
+      const keys = Object.keys(body);
+      const fields = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
+      const values = [...Object.values(body), id];
 
-    const query = `
-        update product
-        set ${fields}
-        where productId = $${values.length} returning *`;
+      await client.query("BEGIN");
 
-    const result = await dbConnection.query(query, values);
+      const query = `
+          update product
+          set ${fields}
+          where productId = $${values.length} returning *`;
 
-    if (result.rowCount === 0)
-      return res.status(404).send(`Data not returned while updating`);
+      const result = await client.query(query, values);
 
-    res.json({ productId: id, message: "Product updated" });
+      await client.query("COMMIT");
+
+      if (result.rowCount === 0)
+        return res.status(404).send(`Data not returned while updating`);
+
+      res.json({ productId: id, message: "Product updated" });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      res.status(500).send("Something went wrong");
+    } finally {
+      client.release();
+    }
   },
 
   delete: async (req, res, next) => {
-    const { id } = req.params;
+    const client = await dbConnection.connect();
+    try {
+      const { id } = req.params;
 
-    if (!id) return res.status(404).send(`ID ${id} not found`);
+      if (!id) return res.status(404).send(`Product ID is required`);
 
-    const query = `
-        delete from product 
-        where productId = $1 returning *`;
+      await client.query("BEGIN");
+      const query = `
+          delete from product 
+          where productId = $1 returning *`;
 
-    const result = await dbConnection.query(query, [id]);
+      const result = await client.query(query, [id]);
 
-    if (result.rowCount === 0)
-      return res.status(404).send(`Data not returned while deleting`);
+      await client.query("COMMIT");
+      if (result.rowCount === 0)
+        return res.status(404).send(`Data not returned while deleting`);
 
-    res.json({ message: "Product deleted" });
+      res.json({ message: "Product deleted" });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      res.status(500).send("Something went wrong");
+    } finally {
+      client.release();
+    }
   },
 };

@@ -5,7 +5,7 @@ export const reviewController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`ID ${id} not found `);
+      if (!id) return res.status(404).send(`Review ID is required`);
 
       const query = `
             select * from review
@@ -13,7 +13,7 @@ export const reviewController = {
 
       const result = await dbConnection.query(query, [id]);
       if (result.rowCount === 0)
-        return res.status(404).send(`Insufficient length to get one`);
+        return res.status(404).send(`Review by ID not found`);
 
       res.json(result.rows);
     } catch (error) {
@@ -29,7 +29,7 @@ export const reviewController = {
       const result = await dbConnection.query(query);
 
       if (result.rowCount === 0)
-        return res.status(404).send(`Insufficient length to get all`);
+        return res.status(404).send(`Review not found`);
 
       res.json(result.rows);
     } catch (error) {
@@ -38,75 +38,119 @@ export const reviewController = {
   },
 
   create: async (req, res, next) => {
-    const { productId, userId, rating, comment, status } = req.body;
+    const client = await dbConnection.connect();
 
-    if (!productId || !userId || !rating || !comment || !status) {
-      return res.status(400).send(`All data required while posting`);
+    try {
+      const { productId, userId, rating, comment, status } = req.body;
+
+      if (!productId || !userId || !rating || !comment || !status) {
+        return res.status(400).send(`All data required while posting`);
+      }
+
+      await client.query("BEGIN");
+
+      const query = `
+          insert into review (productId,userId,rating,comment,status) values
+          ($1,$2,$3,$4,$5) returning *`;
+
+      const result = await dbConnection.query(query, [
+        productId,
+        userId,
+        rating,
+        comment,
+        status,
+      ]);
+
+      await client.query("COMMIT");
+
+      if (result.rowCount === 0)
+        return res.status(404).send(`Data not returned while posting`);
+
+      const id = result.rows[0].reviewid;
+      res.status(201).json({ reviewId: id, message: "Review created" });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      res.status(500).send("Something went wrong");
+    } finally {
+      client.release();
     }
-
-    const query = `
-        insert into review (productId,userId,rating,comment,status) values
-        ($1,$2,$3,$4,$5) returning *`;
-
-    const result = await dbConnection.query(query, [
-      productId,
-      userId,
-      rating,
-      comment,
-      status,
-    ]);
-
-    if (result.rowCount === 0)
-      return res.status(404).send(`Data not returned while posting`);
-
-    const id = result.rows[0].reviewid;
-    res.status(201).json({ reviewId: id, message: "Review created" });
   },
 
   update: async (req, res, next) => {
-    const { id } = req.params;
-    const body = req.body;
+    const client = await dbConnection.connect();
 
-    if (
-      !body.productId &&
-      !body.userId &&
-      !body.rating &&
-      !body.comment &&
-      !body.status
-    )
-      return res.status(400).send(`At least one data required while updating`);
+    try {
+      const { id } = req.params;
+      const body = req.body;
 
-    const keys = Object.keys(body);
-    const fields = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
-    const values = [...Object.values(body), id];
+      if (
+        !id ||
+        (!body.productId &&
+          !body.userId &&
+          !body.rating &&
+          !body.comment &&
+          !body.status)
+      )
+        return res
+          .status(400)
+          .send(
+            `Review ID is required or At least one data required while updating`
+          );
 
-    const query = `
-        update review
-        set ${fields}
-        where reviewId = $${values.length} returning *`;
+      const keys = Object.keys(body);
+      const fields = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
+      const values = [...Object.values(body), id];
 
-    const result = await dbConnection.query(query, values);
+      await client.query("BEGIN");
 
-    if (result.rowCount === 0)
-      return res.status(404).send(`Data not returned while updating`);
+      const query = `
+          update review
+          set ${fields}
+          where reviewId = $${values.length} returning *`;
 
-    res.json({ reviewId: id, message: "Review updated" });
+      const result = await dbConnection.query(query, values);
+
+      await client.query("COMMIT");
+
+      if (result.rowCount === 0)
+        return res.status(404).send(`Data not returned while updating`);
+
+      res.json({ reviewId: id, message: "Review updated" });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      res.send(500).status("Something went wrong");
+    } finally {
+      client.release();
+    }
   },
 
   delete: async (req, res, next) => {
-    const { id } = req.params;
+    const client = await dbConnection.connect();
 
-    if (!id) return res.status(404).send(`ID ${id} not found`);
+    try {
+      const { id } = req.params;
 
-    const query = `
-        delete from review 
-        where reviewId = $1 returning *`;
+      if (!id) return res.status(404).send(`Review ID is required`);
 
-    const result = await dbConnection.query(query, [id]);
+      await client.query("BEGIN");
 
-    if (result.rowCount === 0)
-      return res.status(404).send(`Data not returned while deleting`);
+      const query = `
+          delete from review 
+          where reviewId = $1 returning *`;
 
-    res.json({ message: "Review deleted" });
+      const result = await dbConnection.query(query, [id]);
+
+      await client.query("COMMIT");
+
+      if (result.rowCount === 0)
+        return res.status(404).send(`Data not returned while deleting`);
+
+      res.json({ message: "Review deleted" });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      res.status(500).send("Something went wrong");
+    } finally {
+      client.release();
+    }
   },
 };

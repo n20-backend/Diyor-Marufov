@@ -5,7 +5,7 @@ export const ordersController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`ID ${id} not found `);
+      if (!id) return res.status(404).send(`Order ID is required`);
 
       const query = `
             select * from orders 
@@ -13,9 +13,9 @@ export const ordersController = {
 
       const result = await dbConnection.query(query, [id]);
       if (result.rowCount === 0)
-        return res.status(404).send(`Insufficient length to get one`);
+        return res.status(404).send(`Order by ID not found`);
 
-      res.json(result.rows);
+      res.json(result.rows[0]);
     } catch (error) {
       next(error);
     }
@@ -29,7 +29,7 @@ export const ordersController = {
       const result = await dbConnection.query(query);
 
       if (result.rowCount === 0)
-        return res.status(404).send(`Insufficient length to get all`);
+        return res.status(404).send(`Orders not found`);
 
       res.json(result.rows);
     } catch (error) {
@@ -38,63 +38,103 @@ export const ordersController = {
   },
 
   create: async (req, res, next) => {
-    const { userId, totalAmount } = req.body;
+    const client = await dbConnection.connect();
+    try {
+      const { userId, totalAmount } = req.body;
 
-    if (!userId || !totalAmount) {
-      return res.status(400).send(`All data required while posting`);
+      if (!userId || !totalAmount) {
+        return res.status(400).send(`All data required while posting`);
+      }
+
+      await client.query("BEGIN");
+
+      const query = `
+          insert into orders (userId,totalAmount) values
+          ($1,$2) returning *`;
+
+      const result = await dbConnection.query(query, [userId, totalAmount]);
+
+      await client.query("COMMIT");
+
+      if (result.rowCount === 0)
+        return res.status(404).send(`Data not returned while posting`);
+
+      const id = result.rows[0].orderid;
+      res.status(201).json({ orderId: id, message: "Order created" });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      res.status(500).send("Something went wrong");
+    } finally {
+      client.release();
     }
-
-    const query = `
-        insert into orders (userId,totalAmount) values
-        ($1,$2) returning *`;
-
-    const result = await dbConnection.query(query, [userId, totalAmount]);
-
-    if (result.rowCount === 0)
-      return res.status(404).send(`Data not returned while posting`);
-
-    const id = result.rows[0].orderid;
-    res.status(201).json({ orderId: id, message: "Order created" });
   },
 
   update: async (req, res, next) => {
-    const { id } = req.params;
-    const body = req.body;
+    const client = await dbConnection.connect();
+    try {
+      const { id } = req.params;
+      const body = req.body;
 
-    if (!body.userId && !body.totalAmount)
-      return res.status(400).send(`At least one data required while updating`);
+      if (!id || (!body.userId && !body.totalAmount))
+        return res
+          .status(400)
+          .send(
+            `Order ID is required or At least one data required while updating`
+          );
 
-    const keys = Object.keys(body);
-    const fields = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
-    const values = [...Object.values(body), id];
+      const keys = Object.keys(body);
+      const fields = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
+      const values = [...Object.values(body), id];
 
-    const query = `
-        update orders
-        set ${fields}
-        where orderId = $${values.length} returning *`;
+      await client.query("BEGIN");
 
-    const result = await dbConnection.query(query, values);
+      const query = `
+          update orders
+          set ${fields}
+          where orderId = $${values.length} returning *`;
 
-    if (result.rowCount === 0)
-      return res.status(404).send(`Data not returned while updating`);
+      const result = await dbConnection.query(query, values);
 
-    res.json({ orderId: id, message: "Order updated" });
+      await client.query("COMMIT");
+
+      if (result.rowCount === 0)
+        return res.status(404).send(`Data not returned while updating`);
+
+      res.json({ orderId: id, message: "Order updated" });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      res.status(500).send("Something went wrong");
+    } finally {
+      client.release();
+    }
   },
 
   delete: async (req, res, next) => {
-    const { id } = req.params;
+    const client = await dbConnection.connect();
+    try {
+      const { id } = req.params;
 
-    if (!id) return res.status(404).send(`ID ${id} not found`);
+      if (!id) return res.status(404).send(`Order ID is requireed`);
 
-    const query = `
-        delete from orders 
-        where orderId = $1 returning *`;
+      await client.query("BEGIN");
 
-    const result = await dbConnection.query(query, [id]);
+      const query = `
+          delete from orders 
+          where orderId = $1 returning *`;
 
-    if (result.rowCount === 0)
-      return res.status(404).send(`Data not returned while deleting`);
+      const result = await dbConnection.query(query, [id]);
 
-    res.json({ message: "Order deleted" });
+      await client.query("COMMIT");
+
+      if (result.rowCount === 0)
+        return res.status(404).send(`Data not returned while deleting`);
+
+      res.json({ message: "Order deleted" });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      res.status(500).send("Something went wrong");
+    } finally {
+      client.release();
+    }
   },
 };

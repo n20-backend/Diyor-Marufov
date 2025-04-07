@@ -10,7 +10,6 @@ import {
   productRouter,
   reviewRouter,
   usersRouter,
-  userAuthenticationRouter
 } from "./router/index.js";
 
 const app = express();
@@ -28,8 +27,7 @@ const router = [
   paymentRouter,
   productRouter,
   reviewRouter,
-  usersRouter,
-  userAuthenticationRouter
+  usersRouter
 ];
 
 app.use("/commerce", ...router);
