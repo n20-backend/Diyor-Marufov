@@ -12,8 +12,8 @@ CREATE TABLE product (
     name VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
     categoryId UUID REFERENCES category(categoryId) 
-    ON DELETE SET NULL
-    ON UPDATE SET NULL,
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
     price DECIMAL(10,2) NOT NULL,
     currency currency_type NOT NULL,
     stockQuantity INT NOT NULL CHECK (stockQuantity >= 0),

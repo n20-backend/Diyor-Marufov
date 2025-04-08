@@ -92,15 +92,18 @@ export const paymentController = {
             `Payment ID is required or At least one data required while updating`
           );
 
+      const date = new Date();
+      const utc5 = new Date(date.getTime() + 5 * 60 * 60 * 1000).toISOString();
+
       const keys = Object.keys(body);
       const fields = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
-      const values = [...Object.values(body), id];
+      const values = [...Object.values(body), utc5, id];
 
       await client.query("BEGIN");
 
       const query = `
           update payment
-          set ${fields}
+          set ${fields}, updatedat = $${values.length - 1}
           where paymentId = $${values.length} returning *`;
 
       const result = await dbConnection.query(query, values);
