@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt"
 import { dbConnection } from "../db/index.js";
 
 export const usersController = {
@@ -43,6 +44,8 @@ export const usersController = {
       if (!email || !username || !password || !role || !status) {
         return res.status(400).send(`All data required while posting`);
       }
+       
+      const hashedPassword = await bcrypt.hash(password,10)
 
       const query = `
           insert into users (email,username,password,role,status) values
@@ -51,7 +54,7 @@ export const usersController = {
       const result = await dbConnection.query(query, [
         email,
         username,
-        password,
+        hashedPassword,
         role,
         status,
       ]);

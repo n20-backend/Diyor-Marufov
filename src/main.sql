@@ -34,7 +34,7 @@ CREATE TABLE category (
 CREATE TABLE users (
     userId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(100) NOT NULL UNIQUE,
-    username VARCHAR(100) NOT NULL,
+    username VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(100) NOT NULL,
     role user_role NOT NULL,
     status user_status NOT NULL,
