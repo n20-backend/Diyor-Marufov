@@ -3,6 +3,7 @@ import cors from "cors";
 
 import { errorHandler } from "./middleware/index.js";
 import {
+  authRouter,
   categoryRouter,
   orderDetailRouter,
   ordersRouter,
@@ -27,7 +28,8 @@ const router = [
   paymentRouter,
   productRouter,
   reviewRouter,
-  usersRouter
+  usersRouter,
+  authRouter
 ];
 
 app.use("/commerce", ...router);

@@ -42,6 +42,19 @@ CREATE TABLE users (
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE authUsers (
+    userId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(100) NOT NULL UNIQUE,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,
+    confirmPassword VARCHAR(100) NOT NULL,
+    role user_role NOT NULL,
+    firstName VARCHAR(100) NOT NULL,
+    lastName VARCHAR(100) NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ORDER TABLE
 CREATE TABLE orders (
     orderId UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,4 +1,5 @@
 import { dbConnection } from "../db/index.js";
+import { updatedat } from "../utils/index.js";
 
 export const categoryController = {
   findOne: async (req, res, next) => {
@@ -74,8 +75,7 @@ export const categoryController = {
             `Category id is required or At least one data required while updating`
           );
 
-      const date = new Date();
-      const utc5 = new Date(date.getTime() + 5 * 60 * 60 * 1000).toISOString();
+      const utc5 = updatedat();
 
       const keys = Object.keys(body);
       const fields = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
