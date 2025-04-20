@@ -7,7 +7,7 @@ export const usersController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`User ID is required`);
+      if (!id) return res.status(400).send(`User ID is required`);
 
       const query = `
             select * from users
@@ -17,7 +17,7 @@ export const usersController = {
       if (result.rowCount === 0)
         return res.status(404).send(`User by ID not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -32,7 +32,7 @@ export const usersController = {
 
       if (result.rowCount === 0) return res.status(404).send(`User not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -41,10 +41,6 @@ export const usersController = {
   create: async (req, res, next) => {
     try {
       const { email, username, password, role, status } = req.body;
-
-      if (!email || !username || !password || !role || !status) {
-        return res.status(400).send(`All data required while posting`);
-      }
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -75,19 +71,7 @@ export const usersController = {
       const { id } = req.params;
       const body = req.body;
 
-      if (
-        !id ||
-        (!body.email &&
-          !body.username &&
-          !body.password &&
-          !body.role &&
-          !body.status)
-      )
-        return res
-          .status(400)
-          .send(
-            `User ID is required or At least one data required while updating`
-          );
+      if (!id) return res.status(400).send(`User ID is required`);
 
       const utc5 = updatedat();
 
@@ -105,7 +89,7 @@ export const usersController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while updating`);
 
-      res.json({ userId: id, message: "User updated" });
+      res.status(200).json({ userId: id, message: "User updated" });
     } catch (error) {
       next(error);
     }
@@ -115,7 +99,7 @@ export const usersController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`ID ${id} not found`);
+      if (!id) return res.status(400).send(`ID ${id} not found`);
 
       const query = `
           delete from users 
@@ -126,7 +110,7 @@ export const usersController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while deleting`);
 
-      res.json({ message: "User deleted" });
+      res.status(200).json({ message: "User deleted" });
     } catch (error) {
       next(error);
     }

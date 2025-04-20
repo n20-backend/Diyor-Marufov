@@ -6,7 +6,7 @@ export const ordersController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Order ID is required`);
+      if (!id) return res.status(400).send(`Order ID is required`);
 
       const query = `
             select * from orders 
@@ -16,7 +16,7 @@ export const ordersController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Order by ID not found`);
 
-      res.json(result.rows[0]);
+      res.status(200).json(result.rows[0]);
     } catch (error) {
       next(error);
     }
@@ -32,7 +32,7 @@ export const ordersController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Orders not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -42,10 +42,6 @@ export const ordersController = {
     const client = await dbConnection.connect();
     try {
       const { userId, totalAmount } = req.body;
-
-      if (!userId || !totalAmount) {
-        return res.status(400).send(`All data required while posting`);
-      }
 
       await client.query("BEGIN");
 
@@ -76,12 +72,7 @@ export const ordersController = {
       const { id } = req.params;
       const body = req.body;
 
-      if (!id || (!body.userId && !body.totalAmount))
-        return res
-          .status(400)
-          .send(
-            `Order ID is required or At least one data required while updating`
-          );
+      if (!id) return res.status(400).send(`Order ID is required`);
 
       const utc5 = updatedat();
 
@@ -103,7 +94,7 @@ export const ordersController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while updating`);
 
-      res.json({ orderId: id, message: "Order updated" });
+      res.status(200).json({ orderId: id, message: "Order updated" });
     } catch (error) {
       await client.query("ROLLBACK");
       res.status(500).send("Something went wrong");
@@ -117,7 +108,7 @@ export const ordersController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Order ID is requireed`);
+      if (!id) return res.status(400).send(`Order ID is requireed`);
 
       await client.query("BEGIN");
 
@@ -132,7 +123,7 @@ export const ordersController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while deleting`);
 
-      res.json({ message: "Order deleted" });
+      res.status(200).json({ message: "Order deleted" });
     } catch (error) {
       await client.query("ROLLBACK");
       res.status(500).send("Something went wrong");

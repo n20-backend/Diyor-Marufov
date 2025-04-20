@@ -6,7 +6,7 @@ export const paymentController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Payment ID is required`);
+      if (!id) return res.status(400).send(`Payment ID is required`);
 
       const query = `
             select * from payment
@@ -16,7 +16,7 @@ export const paymentController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Payment by ID not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -32,7 +32,7 @@ export const paymentController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Payment not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -43,10 +43,6 @@ export const paymentController = {
 
     try {
       const { orderId, amount, method, status } = req.body;
-
-      if (!orderId || !amount || !method || !status) {
-        return res.status(400).send(`All data required while posting`);
-      }
 
       await client.query("BEGIN");
 
@@ -83,15 +79,7 @@ export const paymentController = {
       const { id } = req.params;
       const body = req.body;
 
-      if (
-        !id ||
-        (!body.orderId && !body.amount && !body.method && !body.status)
-      )
-        return res
-          .status(400)
-          .send(
-            `Payment ID is required or At least one data required while updating`
-          );
+      if (!id) return res.status(400).send(`Payment ID is required`);
 
       const utc5 = updatedat();
 
@@ -113,7 +101,7 @@ export const paymentController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while updating`);
 
-      res.json({ paymentId: id, message: "Payment updated" });
+      res.status(200).json({ paymentId: id, message: "Payment updated" });
     } catch (error) {
       await client.query("ROLLBACK");
       res.status(500).send("Something went wrong");
@@ -128,7 +116,7 @@ export const paymentController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Payment ID is required`);
+      if (!id) return res.status(400).send(`Payment ID is required`);
 
       await client.query("BEGIN");
 
@@ -143,7 +131,7 @@ export const paymentController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while deleting`);
 
-      res.json({ message: "Payment deleted" });
+      res.status(200).json({ message: "Payment deleted" });
     } catch (error) {
       await client.query("ROLLBACK");
       res.status(500).send("Something went wrong");

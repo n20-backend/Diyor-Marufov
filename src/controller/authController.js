@@ -19,21 +19,10 @@ export const authController = {
         lastName,
       } = req.body;
 
-      if (
-        !email ||
-        !username ||
-        !password ||
-        !confirmPassword ||
-        !role ||
-        !firstName ||
-        !lastName
-      ) {
-        return res.status(400).send("All data is required");
-      }
-      
-      if(password !== confirmPassword)
-        return res.status(400).send(`Password do not match to Confirm Password`)
-
+      if (password !== confirmPassword)
+        return res
+          .status(400)
+          .json({ message: "Password doesn't match to confirm password" });
 
       const hashed = await hashedPassword(password);
 
@@ -52,7 +41,7 @@ export const authController = {
       ]);
 
       if (result.rowCount === 0)
-        return res.status(500).send(`Authorized User not found`);
+        return res.status(400).json({ message: `Authorized User not found` });
 
       const id = result.rows[0].userid;
 
@@ -69,23 +58,20 @@ export const authController = {
     try {
       const { email, password } = req.body;
 
-      if (!email || !password)
-        return res.status(404).send(`All data is required`);
-
       const query = `
         select * from authUsers where email = $1`;
 
       const result = await dbConnection.query(query, [email]);
 
       if (result.rowCount === 0)
-        return res.status(404).send(`Authorized User not found`);
+        return res.status(401).send(`Authorized User not found`);
 
       const user = result.rows[0];
 
       const isMatch = await comparePassword(password, user.password);
 
       if (!isMatch)
-        return res.status(401).json({ message: "Invalid password" });
+        return res.status(400).json({ message: "Invalid password" });
 
       const tokens = generateTokens({ user: user });
 

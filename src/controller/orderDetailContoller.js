@@ -6,7 +6,7 @@ export const orderDetailController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Order Detail ID is required`);
+      if (!id) return res.status(400).send(`Order Detail ID is required`);
 
       const query = `
             select * from orderDetail
@@ -16,7 +16,7 @@ export const orderDetailController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Order Detail by ID not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -32,7 +32,7 @@ export const orderDetailController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Order Detail not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -43,10 +43,6 @@ export const orderDetailController = {
 
     try {
       const { orderId, productId, quantity, unitPrice, totalPrice } = req.body;
-
-      if (!orderId || !productId || !quantity || !unitPrice || !totalPrice) {
-        return res.status(400).send(`All data required while posting`);
-      }
 
       await client.query("BEGIN");
 
@@ -87,19 +83,7 @@ export const orderDetailController = {
       const { id } = req.params;
       const body = req.body;
 
-      if (
-        !id ||
-        (!body.orderId &&
-          !body.productId &&
-          !body.quantity &&
-          !body.unitPrice &&
-          !body.totalPrice)
-      )
-        return res
-          .status(400)
-          .send(
-            `Order Detail ID is required or At least one data required while updating`
-          );
+      if (!id) return res.status(400).send(`Order Detail ID is required`);
 
       const utc5 = updatedat();
 
@@ -121,7 +105,7 @@ export const orderDetailController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while updating`);
 
-      res.json({ orderDetailId: id, message: "Order Detail updated" });
+      res.status(200).json({ orderDetailId: id, message: "Order Detail updated" });
     } catch (error) {
       await client.query("ROLLBACK");
       res.status(500).send("Something went wrong");
@@ -136,7 +120,7 @@ export const orderDetailController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Order Deatail ID is required`);
+      if (!id) return res.status(400).send(`Order Deatail ID is required`);
 
       await client.query("BEGIN");
 

@@ -6,7 +6,7 @@ export const productController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Product ID is required`);
+      if (!id) return res.status(400).send(`Product ID is required`);
 
       const query = `
             select * from product
@@ -16,7 +16,7 @@ export const productController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Insufficient length to get one`);
 
-      res.json(result.rows[0]);
+      res.status(200).json(result.rows[0]);
     } catch (error) {
       next(error);
     }
@@ -32,7 +32,7 @@ export const productController = {
       if (result.rowCount === 0)
         return res.status(404).send(`No products found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -51,21 +51,12 @@ export const productController = {
         imageUrl,
       } = req.body;
 
-      if (
-        !name ||
-        !description ||
-        !categoryId ||
-        !price ||
-        !currency ||
-        !stockQuantity ||
-        !imageUrl
-      ) {
-        return res.status(400).send(`All data required while posting`);
-      }
       await client.query("BEGIN");
+
       const query = `
           insert into product (name,description,categoryId,price,currency,stockQuantity,imageUrl) values
           ($1,$2,$3,$4,$5,$6,$7) returning *`;
+
       const result = await client.query(query, [
         name,
         description,
@@ -78,7 +69,7 @@ export const productController = {
 
       await client.query("COMMIT");
       if (result.rowCount === 0)
-        return res.status(500).send(`Failed to insert product`);
+        return res.status(404).send(`Product not found`);
 
       const id = result.rows[0].productid;
       res.status(201).json({ productId: id, message: "Product Created" });
@@ -96,21 +87,7 @@ export const productController = {
       const { id } = req.params;
       const body = req.body;
 
-      if (
-        !id ||
-        (!body.name &&
-          !body.description &&
-          !body.categoryId &&
-          !body.price &&
-          !body.currency &&
-          !body.stockQuantity &&
-          !body.imageUrl)
-      )
-        return res
-          .status(400)
-          .send(
-            `Product ID is required or At least one data required while updating`
-          );
+      if (!id) return res.status(400).send(`Product ID is required`);
 
       const utc5 = updatedat();
 
@@ -132,7 +109,7 @@ export const productController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while updating`);
 
-      res.json({ productId: id, message: "Product updated" });
+      res.status(200).json({ productId: id, message: "Product updated" });
     } catch (error) {
       await client.query("ROLLBACK");
       res.status(500).send("Something went wrong");
@@ -159,7 +136,7 @@ export const productController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while deleting`);
 
-      res.json({ message: "Product deleted" });
+      res.status(200).json({ message: "Product deleted" });
     } catch (error) {
       await client.query("ROLLBACK");
       res.status(500).send("Something went wrong");

@@ -6,7 +6,7 @@ export const reviewController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Review ID is required`);
+      if (!id) return res.status(400).send(`Review ID is required`);
 
       const query = `
             select * from review
@@ -16,7 +16,7 @@ export const reviewController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Review by ID not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -32,7 +32,7 @@ export const reviewController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Review not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -43,10 +43,6 @@ export const reviewController = {
 
     try {
       const { productId, userId, rating, comment, status } = req.body;
-
-      if (!productId || !userId || !rating || !comment || !status) {
-        return res.status(400).send(`All data required while posting`);
-      }
 
       await client.query("BEGIN");
 
@@ -84,19 +80,7 @@ export const reviewController = {
       const { id } = req.params;
       const body = req.body;
 
-      if (
-        !id ||
-        (!body.productId &&
-          !body.userId &&
-          !body.rating &&
-          !body.comment &&
-          !body.status)
-      )
-        return res
-          .status(400)
-          .send(
-            `Review ID is required or At least one data required while updating`
-          );
+      if (!id) return res.status(400).send(`Review ID is required`);
 
       const utc5 = updatedat();
 
@@ -118,7 +102,7 @@ export const reviewController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while updating`);
 
-      res.json({ reviewId: id, message: "Review updated" });
+      res.status(200).json({ reviewId: id, message: "Review updated" });
     } catch (error) {
       await client.query("ROLLBACK");
       res.send(500).status("Something went wrong");
@@ -133,7 +117,7 @@ export const reviewController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Review ID is required`);
+      if (!id) return res.status(400).send(`Review ID is required`);
 
       await client.query("BEGIN");
 
@@ -148,7 +132,7 @@ export const reviewController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while deleting`);
 
-      res.json({ message: "Review deleted" });
+      res.status(200).json({ message: "Review deleted" });
     } catch (error) {
       await client.query("ROLLBACK");
       res.status(500).send("Something went wrong");

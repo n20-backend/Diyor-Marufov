@@ -6,7 +6,7 @@ export const categoryController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Category ID is required`);
+      if (!id) return res.status(400).send(`Category ID is required`);
 
       const query = `
             select * from category 
@@ -16,7 +16,7 @@ export const categoryController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Category by ID not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -32,7 +32,7 @@ export const categoryController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Category not found`);
 
-      res.json(result.rows);
+      res.status(200).json(result.rows);
     } catch (error) {
       next(error);
     }
@@ -41,10 +41,6 @@ export const categoryController = {
   create: async (req, res, next) => {
     try {
       const { name, description } = req.body;
-
-      if (!name || !description) {
-        return res.status(400).send(`All data required while posting`);
-      }
 
       const query = `
           insert into category (name,description) values
@@ -68,12 +64,7 @@ export const categoryController = {
       const { id } = req.params;
       const body = req.body;
 
-      if (!id || (!body.name && !body.description))
-        return res
-          .status(400)
-          .send(
-            `Category id is required or At least one data required while updating`
-          );
+      if (!id) return res.status(400).send(`Category id is required`);
 
       const utc5 = updatedat();
 
@@ -91,7 +82,7 @@ export const categoryController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while updating`);
 
-      res.json({ categoryId: id, message: "Category updated" });
+      res.status(200).json({ categoryId: id, message: "Category updated" });
     } catch (error) {
       next(error);
     }
@@ -101,7 +92,7 @@ export const categoryController = {
     try {
       const { id } = req.params;
 
-      if (!id) return res.status(404).send(`Category ID is required`);
+      if (!id) return res.status(400).send(`Category ID is required`);
 
       const query = `
           delete from category 
@@ -112,7 +103,7 @@ export const categoryController = {
       if (result.rowCount === 0)
         return res.status(404).send(`Data not returned while deleting`);
 
-      res.json({ message: "Category deleted" });
+      res.status(200).json({ message: "Category deleted" });
     } catch (error) {
       next(error);
     }
