@@ -75,7 +75,7 @@ export const authController = {
 
       const tokens = generateTokens({ user: user });
 
-      res.json({
+      res.status(200).json({
         tokens,
       });
     } catch (error) {
@@ -98,7 +98,7 @@ export const authController = {
           message: expired ? "Token expired" : "Invalid token",
         });
 
-      res.json(decoded);
+      res.status(200).json(decoded);
     } catch (error) {
       next(error);
     }
@@ -119,7 +119,7 @@ export const authController = {
           message: expired ? "Token expired" : "Invalid token",
         });
 
-      res.json({
+      res.status(200).json({
         message: "Logout successful",
       });
     } catch (error) {
@@ -148,7 +148,7 @@ export const authController = {
       const { accessToken, refreshToken: newRefreshToken } =
         generateTokens(payload);
 
-      res.json({
+      res.status(200).json({
         accessToken,
         refreshToken: newRefreshToken,
       });
